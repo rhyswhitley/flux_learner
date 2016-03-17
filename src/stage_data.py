@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
-import os, re
+import os
 import pickle
 import numpy as np
 import pandas as pd
 
-def clean_dataset(raw_df):
+def mask_dataset(raw_df):
 
     # find the flag and data-value headers
     flag_hd = [cn for cn in raw_df.columns if "_qc" in cn]
@@ -24,9 +24,10 @@ def clean_dataset(raw_df):
     n_perc = n_filt/n_total * 100
 
     # echo to user
+    print(raw_df.index.get_level_values('site')[0])
     print("Unfiltered data points are: ", n_total)
     print("Removing NaN -> reduced to: ", n_filt)
-    print("Percentage of <reliable> data: {0:.2f} %".format(n_perc))
+    print("Percentage of <reliable> data: {0:.2f} %\n".format(n_perc))
 
     return data_masked
 
@@ -42,24 +43,37 @@ def cast_dataset(new_df):
     new_df.drop(['DT'], axis=1, inplace=True)
     new_df.set_index("Date", append=True, inplace=True)
 
+    # cast each instantaneous half-hour observation as a new variable for each
+    # quantity
     pivot_df = new_df.pivot(index=new_df.index, columns="Time")
 
-    print(pivot_df.dropna(axis=0).shape[0])
-
-    return 1
+    # return new dataframe to user
+    return pivot_df
 
 def stage_data(raw_df):
 
-    clean_df = clean_dataset(raw_df)
+    # mask gap-filled observations with a NaN mask
+    clean_df = mask_dataset(raw_df)
+
+    # create new variables by casting each 30-min instanteous measurement
     pivot_df = cast_dataset(clean_df)
 
-    return 1
+    return pivot_df
 
 def main():
 
     flux_dflist = pickle.load(open(DIRPATH + "flux_dataframes.pkl", 'rb'))
 
-    stage_data(flux_dflist[0])
+    for fp in flux_dflist:
+        print(fp.index.get_level_values('site')[0])
+        print(fp.columns)
+        print(fp.shape, "\n")
+
+    return 1
+
+    flux_dataset = pd.concat([stage_data(fd) for fd in flux_dflist])
+
+    print(flux_dataset.shape[0])
 
     return 1
 

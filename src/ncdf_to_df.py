@@ -24,6 +24,9 @@ def ncdf_2_df(nc_fname):
     # extract all variable labels that have values
     headers = nc_con.variables.keys()
 
+    print(site_name)
+    print(headers, "\n")
+
     # get timestream
     time_stamp = create_timestream(nc_con.variables['time'])
 
@@ -45,7 +48,8 @@ def ncdf_2_df(nc_fname):
 def get_site_label(filename):
 
     # extract the site name from the basename of the filepath
-    site_lab = re.search('[A-Z][^A-Z]*', os.path.basename(filename)).group(0)
+    site_lab = re.search('.+?(?=Fluxnet)', \
+                         os.path.basename(filename)).group(0)
 
     # return a dict of the datetime stamps
     return {'site': site_lab}
