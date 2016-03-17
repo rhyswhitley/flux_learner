@@ -5,6 +5,22 @@ import pickle
 import numpy as np
 import pandas as pd
 
+def strip_variables(raw_df, targ_hd):
+    """
+    Some of the ncdf files do not have a <complete> collection of variables
+    (e.g. Rnet, Qg), such that the matrices are different shapes. In order
+    to be able to concatenate all fluxnet datasets together, this function
+    strips out the uncommon variables.
+    """
+
+    # include the related QC flag columns as well for masking
+    take_these = targ_hd + [hd + "_qc" for hd in targ_hd]
+    # limit dataset to only these columns
+    new_df = raw_df[take_these]
+
+    return new_df
+
+
 def mask_dataset(raw_df):
 
     # find the flag and data-value headers
@@ -62,23 +78,33 @@ def stage_data(raw_df):
 
 def main():
 
-    flux_dflist = pickle.load(open(DIRPATH + "flux_dataframes.pkl", 'rb'))
+    # import the pickled list of dataframes for all fluxnet sites
+    flux_dflist = pickle.load(open(DIRPATH + "fluxnet_raw_dataframes.pkl", 'rb'))
 
-    for fp in flux_dflist:
-        print(fp.index.get_level_values('site')[0])
-        print(fp.columns)
-        print(fp.shape, "\n")
+    # not all the datasets have the same variables, so get a list of lists
+    # for all variables in each dataset (excl. the flags)
+    head_dflist = [[hd for hd in list(df.columns) if "_qc" not in hd] \
+                    for df in flux_dflist]
 
-    return 1
+    # find the common variables across all datasets
+    common_headers = list(set.intersection(*map(set, head_dflist)))
 
-    flux_dataset = pd.concat([stage_data(fd) for fd in flux_dflist])
+    # now reduce the columns down to the common ones
+    fixed_dflist = [strip_variables(df, common_headers) for df in flux_dflist]
 
-    print(flux_dataset.shape[0])
+    # build a complete dataset of all fluxsites to learn from [remove Nulls]
+    flux_dataset = pd.concat([stage_data(fd) for fd in fixed_dflist]) \
+                    .dropna(axis=0) \
+                    .reset_index()
 
-    return 1
+    # finally save as a pickled object on which to conduct learning exps on
+    pickle.dump(flux_dataset, open(DIRPATH + SAVEPATH, 'wb'), protocol=2)
+
+    return None
 
 if __name__ == "__main__":
 
     DIRPATH = os.path.expanduser("~/Work/Research_Work/Drought_Workshop/PALS_site_datasets/flux/")
+    SAVEPATH = "fluxnet_data.pkl"
 
     main()

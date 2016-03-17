@@ -24,9 +24,6 @@ def ncdf_2_df(nc_fname):
     # extract all variable labels that have values
     headers = nc_con.variables.keys()
 
-    print(site_name)
-    print(headers, "\n")
-
     # get timestream
     time_stamp = create_timestream(nc_con.variables['time'])
 
@@ -124,7 +121,7 @@ def main():
 if __name__ == "__main__":
 
     DIRPATH = os.path.expanduser("~/Work/Research_Work/Drought_Workshop/PALS_site_datasets/flux/")
-    SAVEPATH = "flux_dataframes.pkl"
+    SAVEPATH = "fluxnet_raw_dataframes.pkl"
 
     main()
 
