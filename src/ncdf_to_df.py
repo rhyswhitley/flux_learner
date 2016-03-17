@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os, re
+import pickle
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -36,7 +37,8 @@ def ncdf_2_df(nc_fname):
                 if key not in ['x', 'y', 'time']}
 
     # return a pandas dataframe to the user
-    return pd.DataFrame(one_dict).set_index(['DT'])
+    index_list = ['DT', 'site', 'elevation', 'latitude', 'longitude', 'reference_height']
+    return pd.DataFrame(one_dict).set_index(index_list)
 
 # --------------------------------------------------------------------------------
 
@@ -110,15 +112,15 @@ def main():
     flux_fplist = [os.path.join(dp, f) for (dp, _, fn) in os.walk(DIRPATH) \
                    for f in fn if f.endswith("nc")]
 
-    test = ncdf_2_df(flux_fplist[2])
+    flux_dflist = [ncdf_2_df(fp) for fp in flux_fplist]
 
-    quick_test(test)
+    pickle.dump(flux_dflist, open(DIRPATH + SAVEPATH, 'wb'), protocol=2)
 
 
 if __name__ == "__main__":
 
-    DIRPATH = os.path.expanduser("~/Work/Research_Work/Drought_Workshop/PALS_site_datasets/")
-
+    DIRPATH = os.path.expanduser("~/Work/Research_Work/Drought_Workshop/PALS_site_datasets/flux/")
+    SAVEPATH = "flux_dataframes.pkl"
 
     main()
 
