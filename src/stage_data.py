@@ -97,6 +97,10 @@ def main():
                     .dropna(axis=0) \
                     .reset_index()
 
+#    # add the frequency of data points for each flux site as a possible weighting term
+#    freq_table = flux_dataset.ix[:, 1:4].groupby(["longitude", "latitude"]) \
+#                    .count().reset_index()
+
     # finally save as a pickled object on which to conduct learning exps on
     pickle.dump(flux_dataset, open(DIRPATH + SAVEPATH, 'wb'), protocol=2)
 
